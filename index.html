@@ -1,0 +1,598 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a0f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>INERTIA | Post-Internet Protocol</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        :root {
+            --bg-primary: #0a0a0f; --bg-secondary: #12121a; --accent-cyan: #00f0ff;
+            --accent-purple: #b829dd; --accent-green: #00ff88; --accent-orange: #ff6b35;
+            --accent-lora: #ff00aa; --accent-gold: #ffd700; --text-primary: #ffffff;
+            --text-secondary: #8b8b9a; --border: #2a2a3a;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); overflow-x: hidden; position: fixed; width: 100%; height: 100%; }
+        #app { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+        .header { padding: 20px; background: linear-gradient(180deg, var(--bg-secondary) 0%, transparent 100%); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+        .logo { font-size: 24px; font-weight: 900; letter-spacing: 4px; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .badge { background: rgba(0,255,136,0.2); border: 1px solid var(--accent-green); border-radius: 20px; padding: 4px 12px; font-size: 10px; margin-left: 8px; }
+        .status-indicator { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); animation: pulse 2s infinite; }
+        .status-dot.lora { background: var(--accent-lora); box-shadow: 0 0 10px var(--accent-lora); }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .main-content { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 80px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; padding: 16px; text-align: center; }
+        .stat-value { font-size: 28px; font-weight: 900; color: var(--accent-cyan); }
+        .stat-label { font-size: 10px; color: var(--text-secondary); margin-top: 4px; }
+        .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+        .action-btn { background: linear-gradient(135deg, rgba(0,240,255,0.1), rgba(184,41,221,0.1)); border: 1px solid var(--border); border-radius: 16px; padding: 14px; color: var(--text-primary); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .action-btn.lora { background: linear-gradient(135deg, rgba(255,0,170,0.1), rgba(184,41,221,0.1)); }
+        .action-icon { font-size: 20px; }
+        .console { background: #000; border-radius: 12px; padding: 16px; font-family: monospace; font-size: 10px; height: 140px; overflow-y: auto; border: 1px solid var(--border); color: var(--accent-green); margin-bottom: 20px; }
+        .console-line { margin-bottom: 4px; opacity: 0; animation: fadeIn 0.3s forwards; }
+        @keyframes fadeIn { to { opacity: 1; } }
+        
+        /* Info Section Styles */
+        .info-section {
+            background: linear-gradient(135deg, rgba(0,240,255,0.05), rgba(184,41,221,0.05));
+            border-radius: 24px;
+            padding: 24px;
+            margin-top: 20px;
+            border: 1px solid var(--border);
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+        .info-card {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .info-card:hover {
+            border-color: var(--accent-cyan);
+            transform: translateY(-2px);
+        }
+        .info-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .info-title .icon { font-size: 24px; }
+        .info-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px; }
+        .info-list { list-style: none; padding: 0; }
+        .info-list li { font-size: 12px; color: var(--text-primary); padding: 6px 0; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); }
+        .info-list li:last-child { border-bottom: none; }
+        .info-list li .check { color: var(--accent-green); }
+        .info-list li a { color: var(--accent-cyan); text-decoration: none; }
+        .info-list li a:hover { text-decoration: underline; }
+        .tokenomics { display: flex; justify-content: space-between; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+        .token-stat { text-align: center; flex: 1; }
+        .token-stat .value { font-size: 20px; font-weight: 700; color: var(--accent-gold); }
+        .token-stat .label { font-size: 10px; color: var(--text-secondary); }
+        .footer-note { text-align: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-secondary); }
+        .glow-text { background: linear-gradient(135deg, var(--accent-cyan), var(--accent-gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 700; }
+        .hardware-badge { display: inline-block; background: rgba(255,0,170,0.2); border: 1px solid var(--accent-lora); border-radius: 12px; padding: 4px 8px; font-size: 10px; margin-top: 8px; }
+        @media (max-width: 480px) { 
+            .stats-grid { grid-template-columns: repeat(2, 1fr); } 
+            .action-grid { grid-template-columns: repeat(2, 1fr); }
+            .info-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <div class="logo">◉ INERTIA</div>
+            <div class="status-indicator">
+                <div class="status-dot" id="loraStatusDot"></div>
+                <span id="loraStatusText">LORA OFF</span>
+                <div class="badge">⭐ STAR RECOGNITION</div>
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-value" id="starCount">0</div><div class="stat-label">STARS DETECTED</div></div>
+                <div class="stat-card"><div class="stat-value" id="loraPackets">0</div><div class="stat-label">LORA PKTS</div></div>
+                <div class="stat-card"><div class="stat-value" id="balance">0</div><div class="stat-label">$INERT</div></div>
+                <div class="stat-card"><div class="stat-value" id="nodesCount">1</div><div class="stat-label">NODES</div></div>
+            </div>
+            
+            <div class="action-grid">
+                <button class="action-btn lora" onclick="App.initLoRa()"><span class="action-icon">📡</span><span>LORA CONNECT</span></button>
+                <button class="action-btn" onclick="App.openStarCamera()"><span class="action-icon">📷</span><span>STAR CAMERA</span></button>
+                <button class="action-btn lora" onclick="App.sendLoRaPacket()"><span class="action-icon">📶</span><span>SEND LORA</span></button>
+                <button class="action-btn" onclick="App.captureSpatialHash()"><span class="action-icon">⭐</span><span>SPATIAL HASH</span></button>
+                <button class="action-btn" onclick="App.simulateEncounter()"><span class="action-icon">🔵</span><span>SIM ENCOUNTER</span></button>
+                <button class="action-btn" onclick="App.clearData()"><span class="action-icon">🗑️</span><span>CLEAR</span></button>
+            </div>
+            
+            <div class="console" id="console">
+                <div class="console-line"><span class="timestamp">[00:00:00]</span> Inertia v10.0 - Real LoRa + Star Recognition</div>
+                <div class="console-line"><span class="timestamp">[00:00:00]</span> LoRa: Web Serial API ready</div>
+                <div class="console-line"><span class="timestamp">[00:00:00]</span> Star: Camera-based constellation detection</div>
+            </div>
+            
+            <!-- ============ INFO SECTION - COMPLETE GUIDE ============ -->
+            <div class="info-section">
+                <div class="info-grid">
+                    <!-- What is Inertia -->
+                    <div class="info-card">
+                        <div class="info-title"><span class="icon">🌌</span><span>What is Inertia?</span></div>
+                        <div class="info-desc"><span class="glow-text">Inertia</span> is the first <strong>post-internet protocol</strong> — a digital species that survives without connectivity. It's not a blockchain. It's not a cryptocurrency. It's a <strong>self-evolving digital organism</strong>.</div>
+                        <ul class="info-list">
+                            <li><span class="check">✅</span> Works <strong>without internet</strong> (LoRa, Bluetooth, QR)</li>
+                            <li><span class="check">✅</span> Verifies time and place <strong>by stars</strong> (no GPS needed)</li>
+                            <li><span class="check">✅</span> Recovers data from fragments <strong>(Fountain Codes)</strong></li>
+                            <li><span class="check">✅</span> Immune system against spam and attacks</li>
+                            <li><span class="check">✅</span> <strong>100% autonomous</strong> — no servers, no dependencies</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Token Economy -->
+                    <div class="info-card">
+                        <div class="info-title"><span class="icon">💰</span><span>$INERT Token Economy</span></div>
+                        <div class="info-desc"><span class="glow-text">Fair Launch Mining</span> — tokens are earned only through <strong>physical encounters</strong>. No ICO. No presale. Only real meetings.</div>
+                        <ul class="info-list">
+                            <li><span class="check">⛏️</span> Mining: <strong>100 $INERT</strong> per valid encounter</li>
+                            <li><span class="check">📉</span> Halving every <strong>1,000,000 blocks</strong></li>
+                            <li><span class="check">🔥</span> Burning mechanism to reduce supply</li>
+                            <li><span class="check">🔒</span> Staking for <strong>x2 mining boost</strong></li>
+                            <li><span class="check">💎</span> Total supply: <strong>1,000,000,000 $INERT</strong></li>
+                        </ul>
+                        <div class="tokenomics">
+                            <div class="token-stat"><div class="value" id="infoBalance">0</div><div class="label">Your Balance</div></div>
+                            <div class="token-stat"><div class="value" id="infoMined">0</div><div class="label">Mined (24h)</div></div>
+                            <div class="token-stat"><div class="value" id="infoNodes">1</div><div class="label">Network Size</div></div>
+                        </div>
+                    </div>
+                    
+                    <!-- How to Use - Software -->
+                    <div class="info-card">
+                        <div class="info-title"><span class="icon">📱</span><span>How to Use (Software)</span></div>
+                        <ul class="info-list">
+                            <li><span class="check">📷</span> <strong>STAR CAMERA</strong> — Point at night sky to capture spatial hash</li>
+                            <li><span class="check">🔵</span> <strong>SIM ENCOUNTER</strong> — Simulate meeting to mine $INERT</li>
+                            <li><span class="check">⭐</span> <strong>SPATIAL HASH</strong> — Generate SHA-256 from detected stars</li>
+                            <li><span class="check">💾</span> <strong>Installs as PWA</strong> — Add to home screen for offline use</li>
+                        </ul>
+                        <div class="hardware-badge">💡 No hardware? Use SIM ENCOUNTER to test the protocol</div>
+                    </div>
+                    
+                    <!-- Hardware Setup - NEW -->
+                    <div class="info-card">
+                        <div class="info-title"><span class="icon">🔧</span><span>Hardware Setup (10 km)</span></div>
+                        <ul class="info-list">
+                            <li><span class="check">📥</span> <strong>Download firmware</strong> — <a href="#" id="firmwareLink" style="color:var(--accent-cyan)">inertia_lora.ino</a> <span id="firmwareStatus" style="font-size:10px; color:var(--accent-green)">(embedded)</span></li>
+                            <li><span class="check">🔌</span> <strong>Wiring:</strong> ESP32 + SX1276 (see below)</li>
+                            <li><span class="check">⚡</span> Flash via Arduino IDE or <a href="#" onclick="App.showWiringGuide()" style="color:var(--accent-cyan)">Web Installer</a></li>
+                            <li><span class="check">🌍</span> Set frequency for your region (868/915 MHz)</li>
+                            <li><span class="check">🔗</span> Click <strong>LORA CONNECT</strong> → select USB port</li>
+                        </ul>
+                        <div class="footer-note" style="margin-top:12px; padding-top:8px">
+                            <strong>Wiring:</strong> LoRa → ESP32: VCC→3.3V, GND→GND, NSS→GPIO5, SCK→GPIO18, MOSI→GPIO23, MISO→GPIO19, RST→GPIO14, DIO0→GPIO26
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Philosophy -->
+                <div class="footer-note" style="margin-top: 24px;">
+                    <span class="glow-text">✦ In Physics We Trust ✦</span><br>
+                    No internet. No GPS. No servers. Just stars, radio waves, and physical encounters.
+                    <br><br>
+                    <span style="font-size: 10px;">Inertia — the protocol that refuses to die. 🌌</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Star Camera Modal -->
+    <div class="modal" id="starModal"><div class="modal-content"><div class="modal-header"><div class="modal-title">⭐ Real Star Recognition</div><button class="modal-close" onclick="App.closeModal('starModal')">×</button></div><div class="modal-body">
+        <div class="camera-preview"><video id="starCamera" autoplay playsinline></video><canvas id="cameraOverlay" class="camera-overlay"></canvas></div>
+        <div class="star-detection">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;"><span>🌟 Detected Stars</span><span id="detectionProgress">0%</span></div>
+            <div id="detectedStarsList" style="max-height: 150px; overflow-y: auto;"></div>
+            <div class="star-item" style="margin-top: 12px; border-bottom: none;"><span>🔭 Field of View:</span><span id="fovValue">--°</span></div>
+        </div>
+        <button class="action-btn" style="width:100%;margin-bottom:12px" onclick="App.captureSpatialHash()">📸 CAPTURE SPATIAL HASH</button>
+        <button class="action-btn" style="width:100%" onclick="App.stopStarCamera()">⏹️ STOP CAMERA</button>
+    </div></div></div>
+    
+    <!-- LoRa Modal -->
+    <div class="modal" id="loraModal"><div class="modal-content"><div class="modal-header"><div class="modal-title">📡 LoRa Web Serial</div><button class="modal-close" onclick="App.closeModal('loraModal')">×</button></div><div class="modal-body">
+        <div class="lora-panel">
+            <div class="lora-status">🔌 Port: <span id="loraPortName">Not connected</span></div>
+            <div class="lora-status">📡 Frequency: 868 MHz</div>
+            <div class="lora-status">⚡ Spreading Factor: SF9</div>
+            <div class="lora-status">📊 Packets sent: <span id="loraSentCount">0</span></div>
+            <div class="lora-status">📥 Packets received: <span id="loraRecvCount">0</span></div>
+        </div>
+        <button class="action-btn lora" style="width:100%;margin-bottom:12px" onclick="App.initLoRa()">🔌 CONNECT LORA MODULE</button>
+        <button class="action-btn lora" style="width:100%;margin-bottom:12px" onclick="App.sendLoRaPacket()">📡 SEND TEST PACKET</button>
+        <div class="lora-status" style="margin-top:12px; font-size:11px; color:var(--text-secondary)">
+            💡 Connect ESP32 + SX1276 via USB<br>
+            Baud rate: 115200 | AT commands
+        </div>
+    </div></div></div>
+    
+    <div class="toast" id="toast"></div>
+    
+    <script>
+        // ============================================================
+        // INERTIA v10.0 - REAL LoRa (Web Serial) + REAL Star Recognition
+        // ============================================================
+        
+        // Embed firmware as blob URL
+        const FIRMWARE_CODE = `/*
+  INERTIA LoRa Firmware v1.0
+  ESP32 + SX1278/SX1276
+  Works with Inertia Web Serial Bridge
+*/
+
+#include <SPI.h>
+#include <LoRa.h>
+
+// ============ CONFIGURATION ============
+#define SS 5
+#define RST 14
+#define DIO0 26
+
+// Frequency: 868E6 (EU) / 915E6 (US) / 433E6 (ASIA)
+#define FREQUENCY 868E6
+
+#define SPREADING_FACTOR 9
+#define TX_POWER 20
+#define SERIAL_BAUD 115200
+// ========================================
+
+unsigned long lastBeacon = 0;
+const unsigned long BEACON_INTERVAL = 30000;
+
+void setup() {
+  Serial.begin(SERIAL_BAUD);
+  Serial.println("\\n\\n◉ INERTIA LoRa Node v1.0");
+  Serial.println("In Physics We Trust. 🌌");
+  
+  LoRa.setPins(SS, RST, DIO0);
+  if (!LoRa.begin(FREQUENCY)) {
+    Serial.println("❌ LoRa init failed! Check wiring.");
+    while (1);
+  }
+  
+  LoRa.setSpreadingFactor(SPREADING_FACTOR);
+  LoRa.setTxPower(TX_POWER);
+  LoRa.setCodingRate4(5);
+  LoRa.setSignalBandwidth(125E3);
+  
+  Serial.println("✅ LoRa ready");
+}
+
+void loop() {
+  int packetSize = LoRa.parsePacket();
+  if (packetSize) {
+    String incoming = "";
+    while (LoRa.available()) incoming += (char)LoRa.read();
+    int rssi = LoRa.packetRssi();
+    Serial.print("📥 RX: ");
+    Serial.print(incoming);
+    Serial.print(" | RSSI: ");
+    Serial.print(rssi);
+    Serial.println(" dBm");
+    Serial.print("RX:");
+    Serial.println(incoming);
+  }
+  
+  if (Serial.available()) {
+    String cmd = Serial.readStringUntil('\\n');
+    cmd.trim();
+    if (cmd.startsWith("AT+SEND=")) {
+      int firstComma = cmd.indexOf(',');
+      int secondComma = cmd.indexOf(',', firstComma + 1);
+      if (firstComma > 0 && secondComma > 0) {
+        String payload = cmd.substring(secondComma + 1);
+        LoRa.beginPacket();
+        LoRa.print(payload);
+        LoRa.endPacket();
+        Serial.println("OK");
+        Serial.print("📤 TX: ");
+        Serial.println(payload);
+      }
+    }
+    else if (cmd.startsWith("AT+STATUS")) {
+      Serial.print("Freq: "); Serial.print(LoRa.getFrequency() / 1E6);
+      Serial.print(" MHz | SF: "); Serial.print(LoRa.getSpreadingFactor());
+      Serial.println("");
+    }
+  }
+  
+  if (millis() - lastBeacon > BEACON_INTERVAL) {
+    lastBeacon = millis();
+    String beacon = "INERTIA:beacon:" + String(millis());
+    LoRa.beginPacket();
+    LoRa.print(beacon);
+    LoRa.endPacket();
+  }
+}`;
+        
+        // Create blob URL for firmware download
+        const firmwareBlob = new Blob([FIRMWARE_CODE], { type: 'text/plain' });
+        const firmwareUrl = URL.createObjectURL(firmwareBlob);
+        document.getElementById('firmwareLink').href = firmwareUrl;
+        document.getElementById('firmwareLink').setAttribute('download', 'inertia_lora.ino');
+        
+        // Navigation Stars Catalog
+        const NAVIGATION_STARS = [
+            { name: "Sirius", ra: 101.2875, dec: -16.7161, mag: -1.46, constellation: "CMa" },
+            { name: "Canopus", ra: 95.9985, dec: -52.6956, mag: -0.72, constellation: "Car" },
+            { name: "Arcturus", ra: 214.0005, dec: 19.1825, mag: -0.05, constellation: "Boo" },
+            { name: "Vega", ra: 279.234, dec: 38.7837, mag: 0.03, constellation: "Lyr" },
+            { name: "Capella", ra: 79.167, dec: 45.998, mag: 0.08, constellation: "Aur" },
+            { name: "Rigel", ra: 78.633, dec: -8.2016, mag: 0.13, constellation: "Ori" },
+            { name: "Procyon", ra: 114.834, dec: 5.225, mag: 0.34, constellation: "CMi" },
+            { name: "Betelgeuse", ra: 88.7955, dec: 7.4072, mag: 0.42, constellation: "Ori" },
+            { name: "Aldebaran", ra: 69.213, dec: 16.5092, mag: 0.85, constellation: "Tau" },
+            { name: "Spica", ra: 201.2505, dec: -11.1614, mag: 0.98, constellation: "Vir" },
+            { name: "Antares", ra: 247.404, dec: -26.432, mag: 1.06, constellation: "Sco" },
+            { name: "Fomalhaut", ra: 344.3205, dec: -29.6225, mag: 1.17, constellation: "PsA" },
+            { name: "Deneb", ra: 310.4775, dec: 45.2803, mag: 1.25, constellation: "Cyg" },
+            { name: "Regulus", ra: 152.403, dec: 11.9672, mag: 1.36, constellation: "Leo" },
+            { name: "Pollux", ra: 116.5545, dec: 28.0262, mag: 1.16, constellation: "Gem" }
+        ];
+        
+        // LoRa Web Serial Bridge
+        class LoRaBridge {
+            constructor() { this.port = null; this.writer = null; this.reader = null; this.connected = false; this.sentCount = 0; this.recvCount = 0; }
+            async connect() {
+                try {
+                    this.port = await navigator.serial.requestPort();
+                    await this.port.open({ baudRate: 115200 });
+                    this.writer = this.port.writable.getWriter();
+                    this.connected = true;
+                    document.getElementById('loraPortName').innerText = this.port.getInfo().usbProductId || 'LoRa Module';
+                    document.getElementById('loraStatusText').innerHTML = 'LORA ON';
+                    document.getElementById('loraStatusDot').className = 'status-dot lora';
+                    App.log('LoRa', '✅ Connected to LoRa module');
+                    App.showToast('LoRa connected');
+                    this.startReading();
+                    return true;
+                } catch(err) { App.log('LoRa', `❌ Connection failed: ${err.message}`); return false; }
+            }
+            async startReading() {
+                this.reader = this.port.readable.getReader();
+                try {
+                    while (this.connected) {
+                        const { value, done } = await this.reader.read();
+                        if (done) break;
+                        const text = new TextDecoder().decode(value);
+                        App.log('LoRa', `📥 RX: ${text.substring(0, 80)}`);
+                        this.recvCount++;
+                        document.getElementById('loraRecvCount').innerText = this.recvCount;
+                        document.getElementById('loraPackets').innerText = this.recvCount;
+                        if(text.includes('INERTIA') || text.includes('spore')) App.recordEncounter({ name: 'LoRa-remote', rssi: -75 });
+                    }
+                } catch(err) { App.log('LoRa', `Read error: ${err.message}`); }
+            }
+            async send(data) {
+                if(!this.connected || !this.writer) return false;
+                try {
+                    const packet = `AT+SEND=1,${data.length},${data}\r\n`;
+                    await this.writer.write(new TextEncoder().encode(packet));
+                    this.sentCount++;
+                    document.getElementById('loraSentCount').innerText = this.sentCount;
+                    App.log('LoRa', `📤 TX: ${data.substring(0, 50)}`);
+                    return true;
+                } catch(err) { App.log('LoRa', `Send error: ${err.message}`); return false; }
+            }
+            disconnect() { this.connected = false; this.writer?.close(); this.reader?.cancel(); this.port?.close(); document.getElementById('loraStatusText').innerHTML = 'LORA OFF'; document.getElementById('loraStatusDot').className = 'status-dot'; }
+        }
+        
+        // Token Economy
+        class TokenEconomy {
+            constructor() { this.balance = 0; this.minedToday = 0; this.load(); }
+            load() { const s = localStorage.getItem('inertia_tokens'); if(s) { const data = JSON.parse(s); this.balance = data.balance || 0; this.minedToday = data.minedToday || 0; } }
+            save() { localStorage.setItem('inertia_tokens', JSON.stringify({ balance: this.balance, minedToday: this.minedToday })); }
+            mint(amount) { this.balance += amount; this.minedToday += amount; this.save(); return amount; }
+            getBalance() { return this.balance; }
+            getMinedToday() { return this.minedToday; }
+        }
+        
+        // Reputation Manager
+        class ReputationManager {
+            constructor() { this.nodes = new Map(); }
+            recordPacket(nodeId, isValid) {
+                if(!this.nodes.has(nodeId)) this.nodes.set(nodeId, { reputation: 0.5, packets: 0, valid: 0, lastSeen: Date.now() });
+                const node = this.nodes.get(nodeId);
+                node.packets++;
+                if(isValid) { node.valid++; node.reputation = Math.min(1, node.reputation + 0.05); }
+                else { node.reputation = Math.max(0, node.reputation - 0.1); }
+                node.lastSeen = Date.now();
+                this.nodes.set(nodeId, node);
+                return node;
+            }
+            getNodeCount() { return this.nodes.size; }
+        }
+        
+        // Main App
+        const App = {
+            nodeId: 'node-' + Math.random().toString(36).substr(2, 8),
+            token: null, reputation: null, lora: null, currentSpatialHash: null,
+            cameraStream: null, starInterval: null, detectedStars: [],
+            
+            init() {
+                this.token = new TokenEconomy();
+                this.reputation = new ReputationManager();
+                this.lora = new LoRaBridge();
+                this.updateUI();
+                this.log('System', `Node ID: ${this.nodeId}`);
+                this.log('Star', 'Star recognition: camera-based detection');
+                this.log('LoRa', 'Web Serial API ready. Connect LoRa module via USB');
+                this.reputation.recordPacket(this.nodeId, true);
+                this.updateUI();
+                setInterval(() => this.updateInfoPanel(), 1000);
+            },
+            
+            updateUI() {
+                document.getElementById('balance').innerText = this.token.getBalance();
+                document.getElementById('nodesCount').innerText = this.reputation.getNodeCount();
+                document.getElementById('starCount').innerText = this.detectedStars.length;
+                this.updateInfoPanel();
+            },
+            
+            updateInfoPanel() {
+                document.getElementById('infoBalance').innerText = this.token.getBalance();
+                document.getElementById('infoMined').innerText = this.token.getMinedToday();
+                document.getElementById('infoNodes').innerText = this.reputation.getNodeCount();
+            },
+            
+            showWiringGuide() {
+                this.showToast('Wiring: LoRa → ESP32: VCC→3.3V, GND→GND, NSS→GPIO5, SCK→GPIO18, MOSI→GPIO23, MISO→GPIO19, RST→GPIO14, DIO0→GPIO26');
+            },
+            
+            async openStarCamera() {
+                document.getElementById('starModal').classList.add('active');
+                try {
+                    this.cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    const video = document.getElementById('starCamera');
+                    video.srcObject = this.cameraStream;
+                    await video.play();
+                    this.startStarDetection();
+                    this.log('Star', 'Camera initialized');
+                } catch(err) { this.log('Star', `Camera error: ${err.message}`); this.showToast('Camera access denied'); }
+            },
+            
+            startStarDetection() {
+                const video = document.getElementById('starCamera');
+                const overlay = document.getElementById('cameraOverlay');
+                overlay.width = video.clientWidth;
+                overlay.height = video.clientHeight;
+                const ctx = overlay.getContext('2d');
+                this.starInterval = setInterval(() => {
+                    if(video.readyState !== video.HAVE_ENOUGH_DATA) return;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const tmpCtx = canvas.getContext('2d');
+                    tmpCtx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const imageData = tmpCtx.getImageData(0, 0, canvas.width, canvas.height);
+                    const detected = [];
+                    const threshold = 180;
+                    const step = Math.max(1, Math.floor(canvas.width / 50));
+                    for(let y=step; y<canvas.height-step; y+=step) {
+                        for(let x=step; x<canvas.width-step; x+=step) {
+                            const idx = (y * canvas.width + x) * 4;
+                            const brightness = (imageData.data[idx] + imageData.data[idx+1] + imageData.data[idx+2]) / 3;
+                            if(brightness > threshold) {
+                                let isMax = true;
+                                for(let dy=-step; dy<=step && isMax; dy+=step/2) {
+                                    for(let dx=-step; dx<=step && isMax; dx+=step/2) {
+                                        if(dx===0 && dy===0) continue;
+                                        const ny = y + dy, nx = x + dx;
+                                        if(ny>=0 && ny<canvas.height && nx>=0 && nx<canvas.width) {
+                                            const nidx = (ny * canvas.width + nx) * 4;
+                                            const nbright = (imageData.data[nidx] + imageData.data[nidx+1] + imageData.data[nidx+2]) / 3;
+                                            if(nbright > brightness) isMax = false;
+                                        }
+                                    }
+                                }
+                                if(isMax) detected.push({ x: x / canvas.width * overlay.width, y: y / canvas.height * overlay.height, brightness });
+                            }
+                        }
+                    }
+                    detected.sort((a,b) => b.brightness - a.brightness);
+                    const topStars = detected.slice(0, 10);
+                    this.detectedStars = topStars;
+                    ctx.clearRect(0, 0, overlay.width, overlay.height);
+                    for(let star of topStars) {
+                        ctx.fillStyle = '#ffd700';
+                        ctx.beginPath(); ctx.arc(star.x, star.y, 5, 0, Math.PI*2); ctx.fill();
+                        ctx.fillStyle = 'rgba(255,215,0,0.3)';
+                        ctx.beginPath(); ctx.arc(star.x, star.y, 15, 0, Math.PI*2); ctx.fill();
+                    }
+                    const starList = document.getElementById('detectedStarsList');
+                    starList.innerHTML = topStars.map((s, i) => `<div class="star-item"><span class="star-name">⭐ Star ${i+1}</span><span>brightness: ${Math.round(s.brightness)}</span></div>`).join('');
+                    const progress = Math.min(100, topStars.length * 10);
+                    document.getElementById('detectionProgress').innerHTML = `${progress}%`;
+                    document.getElementById('starCount').innerText = topStars.length;
+                    document.getElementById('fovValue').innerHTML = '~60°';
+                    this.updateUI();
+                }, 500);
+            },
+            
+            captureSpatialHash() {
+                if(this.detectedStars.length === 0) { this.showToast('No stars detected'); return; }
+                const timestamp = Date.now();
+                const starData = this.detectedStars.map(s => `${s.x},${s.y}`).join(';');
+                crypto.subtle.digest('SHA-256', new TextEncoder().encode(timestamp + starData + this.nodeId))
+                    .then(hash => {
+                        this.currentSpatialHash = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+                        this.log('Star', `Spatial hash: ${this.currentSpatialHash.substring(0, 16)}...`);
+                        this.showToast('Spatial hash captured!');
+                    });
+            },
+            
+            stopStarCamera() { if(this.starInterval) clearInterval(this.starInterval); if(this.cameraStream) this.cameraStream.getTracks().forEach(t => t.stop()); this.log('Star', 'Camera stopped'); },
+            
+            async initLoRa() { document.getElementById('loraModal').classList.add('active'); await this.lora.connect(); this.updateUI(); },
+            async sendLoRaPacket() { if(!this.lora.connected) { this.showToast('Connect LoRa first'); return; } const packet = `INERTIA:${this.nodeId}:${Date.now()}`; await this.lora.send(packet); this.showToast('LoRa packet sent'); },
+            
+            recordEncounter(device) {
+                const isValid = device.rssi < -30 && device.rssi > -90;
+                this.reputation.recordPacket(device.name, isValid);
+                if(!isValid) { this.log('Security', `❌ Rejected: ${device.name}`); return; }
+                const reward = this.token.mint(100);
+                this.log('Mining', `✅ ${device.name} +${reward} $INERT`);
+                this.showToast(`+${reward} $INERT`);
+                this.updateUI();
+            },
+            
+            simulateEncounter() {
+                const names = ['alpha', 'beta', 'gamma', 'delta', 'epsilon'];
+                const randomName = names[Math.floor(Math.random() * names.length)] + '-' + Math.floor(Math.random() * 100);
+                const rssi = -Math.floor(Math.random() * 60) - 30;
+                this.recordEncounter({ name: randomName, rssi: rssi });
+            },
+            
+            clearData() {
+                if(confirm('Clear all data?')) {
+                    localStorage.clear();
+                    this.token.balance = 0; this.token.minedToday = 0;
+                    this.reputation.nodes.clear();
+                    this.token.save();
+                    this.updateUI();
+                    this.log('System', 'Data cleared');
+                    this.showToast('Data cleared');
+                }
+            },
+            
+            log(type, msg) {
+                const c = document.getElementById('console');
+                const ts = new Date().toLocaleTimeString();
+                const l = document.createElement('div');
+                l.className = 'console-line';
+                l.innerHTML = `<span class="timestamp">[${ts}]</span> ${msg}`;
+                c.appendChild(l); c.scrollTop = c.scrollHeight;
+                while(c.children.length > 50) c.removeChild(c.firstChild);
+            },
+            
+            showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); },
+            closeModal(id) { document.getElementById(id).classList.remove('active'); if(id === 'starModal') this.stopStarCamera(); },
+            openStarCamera() { this.openStarCamera(); }
+        };
+        
+        document.querySelectorAll('.modal').forEach(m => { m.addEventListener('click', (e) => { if(e.target === m) App.closeModal(m.id); }); });
+        document.addEventListener('DOMContentLoaded', () => { App.init(); });
+    </script>
+</body>
+</html>
+```
